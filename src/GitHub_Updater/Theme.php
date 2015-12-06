@@ -117,6 +117,9 @@ class Theme extends Base {
 
 				$self_hosted_parts = array_diff( array_keys( self::$extra_repo_headers ), array( 'branch' ) );
 				foreach ( $self_hosted_parts as $part ) {
+					if ( 'languages' === $part ) {
+						continue;
+					}
 					$self_hosted = $theme->get( $repo_parts[ $part ] );
 
 					if ( ! empty( $self_hosted ) ) {
@@ -152,6 +155,9 @@ class Theme extends Base {
 				$git_theme['local_path_extended']     = null;
 				$git_theme['branch']                  = $theme->get( $repo_parts['branch'] );
 				$git_theme['branch']                  = ! empty( $git_theme['branch'] ) ? $git_theme['branch'] : 'master';
+
+				$language_pack                        = $theme->get( $repo_parts['languages'] );
+				$git_theme['language_pack']           = ! empty( $language_pack ) ? true : false;
 			}
 
 			/*

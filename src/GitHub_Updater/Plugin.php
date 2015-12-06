@@ -134,6 +134,9 @@ class Plugin extends Base {
 
 				$self_hosted_parts = array_diff( array_keys( self::$extra_repo_headers ), array( 'branch' ) );
 				foreach ( $self_hosted_parts as $part ) {
+					if ( 'languages' === $part ) {
+						continue;
+					}
 					if ( array_key_exists( $repo_parts[ $part ], $headers ) &&
 					     ! empty( $headers[ $repo_parts[ $part ] ] )
 					) {
@@ -172,6 +175,7 @@ class Plugin extends Base {
 				$git_plugin['sections']['description'] = $plugin_data['Description'];
 				$git_plugin['private']                 = true;
 				$git_plugin['dot_org']                 = false;
+				$git_plugin['language_pack']           = ! empty( $headers[ $repo_parts['languages'] ] ) ? true : false;
 			}
 			if ( isset( $all_plugins[ $plugin ]->id )  ) {
 				$git_plugin['dot_org']                 = true;

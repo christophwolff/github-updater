@@ -104,6 +104,7 @@ class Base {
 		'branch'     => 'Branch',
 		'enterprise' => 'Enterprise',
 		'gitlab_ce'  => 'CE',
+		'languages'  => 'Languages',
 	);
 
 	/**
@@ -356,6 +357,8 @@ class Base {
 		$slug       = null;
 		$repo       = null;
 		$new_source = null;
+		$lang_type  = null;
+		$lang_source = null;
 
 		/*
 		 * Exit for mismatch.
@@ -370,6 +373,7 @@ class Base {
 		 * Rename plugins.
 		 */
 		if ( $upgrader instanceof \Plugin_Upgrader && $this instanceof Plugin ) {
+			$lang_type = 'plugin';
 			if ( isset( $hook_extra['plugin'] ) ) {
 				$slug       = dirname( $hook_extra['plugin'] );
 				$new_source = trailingslashit( $remote_source ) . $slug;
@@ -402,6 +406,7 @@ class Base {
 		 * Rename themes.
 		 */
 		if ( $upgrader instanceof \Theme_Upgrader && $this instanceof Theme ) {
+			$lang_type = 'theme';
 			if ( isset( $hook_extra['theme'] ) ) {
 				$slug       = $hook_extra['theme'];
 				$new_source = trailingslashit( $remote_source ) . $slug;
@@ -471,7 +476,38 @@ class Base {
 
 		$wp_filesystem->move( $source, $new_source );
 
+		if ( isset( $this->config[ $repo['repo'] ] ) && $this->config[ $repo['repo'] ]->language_pack ) {
+			add_filter( 'language_upgrader_source_selection', array( &$this, 'language_upgrader_source_selection' ), 10, 3 );
+			$lang_source = $new_source;
+
+			$language_update = new \stdClass();
+			$language_update->package = $this->config[ $repo['repo'] ]->download_link;
+			$language_update->type    = $lang_type;
+			$language_update->slug    = $slug;
+			$language_updates[]       = $language_update;
+
+			$language_updater = new \Language_Pack_Upgrader( new \Language_Pack_Upgrader_Skin() );
+			$language_updater->bulk_upgrade( $language_updates );
+
+		}
+
 		return trailingslashit( $new_source );
+	}
+
+	public function language_upgrader_source_selection( $source, $remote_source, $upgrader ) {
+		global $wp_filesystem;
+
+		if ( $upgrader instanceof \Language_Pack_Upgrader ) {
+			if ( isset( $upgrader->skin->language_update->slug ) ) {
+				$new_source = trailingslashit( $remote_source ) . $upgrader->skin->language_update->slug;
+			} else {
+				return $source;
+			}
+			$wp_filesystem->move( $source, $new_source );
+
+			return trailingslashit( $new_source );
+		}
+		return $remote_source;
 	}
 
 	/**
